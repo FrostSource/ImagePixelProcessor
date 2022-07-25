@@ -348,3 +348,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/ConsoleTests/TestImages/alpha_image.pdn
+/ConsoleTests/TestImages/C_alpha_gray.png
+/ConsoleTests/TestImages/C_alpha_red.png
+/ConsoleTests/TestImages/C_alpha_white.png
+/ConsoleTests/TestImages/C_grayscale.png
+/ConsoleTests/TestImages/C_mask.png
+/ConsoleTests/TestImages/C_no_alpha.png
+/ConsoleTests/TestImages/C.png

@@ -11,24 +11,26 @@ internal class Program
     static void Main(string[] args)
     {
         string testPath = @"..\..\..\TestImages";
-        //Console.WriteLine(new FileInfo(Path.Join(testPath, "alpha_image.png")).FullName);
+        string testImage = Path.Join(testPath, "alpha_image.png");
 
-        var bitmap = new Bitmap(Path.Join(testPath, "alpha_image.png"));
-        //var bitmap = new Bitmap(Path.Join(testPath, "alpha_image_1024.png"));
-        bitmap.Save(Path.Join(testPath, "mainoriginal.png"));
-        var direct = new DirectBitmap(bitmap);
-        direct.InternalBitmap.Save(Path.Join(testPath, "mainoriginal.png"));
-        PixelProcessor.New(bitmap)
+        var bitmap = new Bitmap(testImage);
+        using var _ = PixelProcessor.New(bitmap)
+            // Create alpha mask
             .Shift(ColorChannel.A, "mask", ColorChannel.RGB)
             .SetValue("mask", ColorChannel.A, 255)
-            //.Shift(ColorChannel.R, "col", ColorChannel.R)
-            //.Shift(ColorChannel.G, "col", ColorChannel.G)
-            //.Shift(ColorChannel.B, "col", ColorChannel.B)
-            .ProcessSave(Path.Join(testPath, "{0}"), true, ImageFormat.Png)
-            .Save(Path.Join(testPath, "main.png"))
-            //.Process()
-            //.Save("mask", Path.Join(testPath, "test.png"))
-            .Finish();
+            // Remove alpha
+            .Copy(ColorChannel.RGB, "no_alpha")
+            .SetValue("no_alpha", ColorChannel.A, 255)
+            // Grayscale
+            .Grayscale("grayscale")
+            // Clear alpha to value/color
+            .ClearAlpha(255, "alpha_white")
+            .SetValue("alpha_white", ColorChannel.A, 255)
+            .ClearAlpha(128, "alpha_gray")
+            .SetValue("alpha_gray", ColorChannel.A, 255)
+            .ClearAlpha(Color.Red, "alpha_red")
+            .ProcessSave(Path.Join(testPath, Path.GetFileNameWithoutExtension(testImage) + "_{0}"), true, ImageFormat.Png)
+            ;
 
         //// Get grayscale alpha mask
         //PixelProcessor.New(bitmap)

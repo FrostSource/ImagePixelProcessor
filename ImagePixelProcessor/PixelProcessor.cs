@@ -24,7 +24,7 @@ namespace ImagePixelProcessor;
 /// </example>
 
 [SupportedOSPlatform("windows")]
-public sealed class PixelProcessor
+public sealed class PixelProcessor : IDisposable
 {
     private readonly Dictionary<string, BitmapType> ProcessingBitmaps = new();
     private readonly List<Action<int, int>> Actions = new();
@@ -87,19 +87,22 @@ public sealed class PixelProcessor
         return this;
     }
 
+    #region Pixel operations
+
     private PixelProcessor Extract(BitmapType bitmap, ColorChannel channel, string output = "")
     {
         BitmapType newBitmap = string.IsNullOrEmpty(output) ? bitmap : GetProcessingBitmap(output);
         Actions.Add((x, y) =>
         {
             Color pixel = bitmap.GetPixel(x, y);
+            Color pixel2 = newBitmap.GetPixel(x, y);
             Color color = channel switch
             {
-                ColorChannel.A => Color.FromArgb(pixel.A, 0, 0, 0),
-                ColorChannel.R => Color.FromArgb(0, pixel.R, 0, 0),
-                ColorChannel.G => Color.FromArgb(0, 0, pixel.G, 0),
-                ColorChannel.B => Color.FromArgb(0, 0, 0, pixel.B),
-                ColorChannel.RGB => Color.FromArgb(0, pixel.R, pixel.G, pixel.B),
+                ColorChannel.A => Color.FromArgb(pixel.A, pixel2.R, pixel2.G, pixel2.B),
+                ColorChannel.R => Color.FromArgb(pixel2.A, pixel.R, pixel2.G, pixel2.B),
+                ColorChannel.G => Color.FromArgb(pixel2.A, pixel2.R, pixel.G, pixel2.B),
+                ColorChannel.B => Color.FromArgb(pixel2.A, pixel2.R, pixel2.G, pixel.B),
+                ColorChannel.RGB => Color.FromArgb(pixel2.A, pixel.R, pixel.G, pixel.B),
                 _ => throw new NotImplementedException(),
             };
             newBitmap.SetPixel(x, y, color);
@@ -185,6 +188,37 @@ public sealed class PixelProcessor
     public PixelProcessor Invert(ColorChannel channel, string output = "")
     {
         return Invert(Bitmap, channel, output);
+    }
+
+    private PixelProcessor Set(BitmapType bitmap, Color color, string output = "")
+    {
+        BitmapType newBitmap = string.IsNullOrEmpty(output) ? bitmap : GetProcessingBitmap(output);
+        Actions.Add((x, y) =>
+        {
+            newBitmap.SetPixel(x, y, color);
+        });
+        return this;
+    }
+    /// <summary>
+    /// Sets the pixel of the main bitmap to a new <see cref="Color"/> value.
+    /// </summary>
+    /// <param name="color"><see cref="Color"/> value to set as.</param>
+    /// <param name="output">Named bitmap to output to; or directly to the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor Set(Color color, string output = "")
+    {
+        return Set(Bitmap, color, output);
+    }
+    /// <summary>
+    /// Sets the pixel of the main bitmap to a new <see cref="Color"/> value.
+    /// </summary>
+    /// <param name="name">Named bitmap to operate on.</param>
+    /// <param name="color"><see cref="Color"/> value to set as.</param>
+    /// <param name="output">Named bitmap to output to; or directly to the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor Set(string name, Color color, string output = "")
+    {
+        return Set(GetProcessingBitmap(name), color, output);
     }
 
     private PixelProcessor SetValue(BitmapType bitmap, ColorChannel channel, int value, string output = "")
@@ -324,6 +358,187 @@ public sealed class PixelProcessor
     {
         return Shift(Bitmap, from, GetProcessingBitmap(name), to);
     }
+
+    // CUSTOM
+
+    /// <summary>
+    /// A custom pixel delegate is used to perform user operations on a pixel color value.
+    /// </summary>
+    /// <param name="pixel1">The color value from the input bitmap.</param>
+    /// <param name="pixel2">The color value from the output bitmap.</param>
+    /// <returns>The color value to set the output bitmap.</returns>
+    public delegate Color CustomPixelDelegate(Color pixel1, Color pixel2);
+
+    private PixelProcessor Custom(BitmapType bitmap, CustomPixelDelegate func, string output = "")
+    {
+        BitmapType newBitmap = string.IsNullOrEmpty(output) ? bitmap : GetProcessingBitmap(output);
+        Actions.Add((x, y) =>
+        {
+            Color pixel = func(bitmap.GetPixel(x, y), newBitmap.GetPixel(x, y));
+            newBitmap.SetPixel(x, y, pixel);
+        });
+        return this;
+    }
+    /// <summary>
+    /// Takes a custom pixel handling delegate to decide the end result of the pixel.
+    /// <para/>
+    /// <paramref name="func"/> has the following signature:
+    /// <code>
+    /// Color func(Color pixel1, Color pixel2)
+    /// </code>
+    /// Where:
+    /// <para/>pixel1 = The color value from the main bitmap.
+    /// <para/>pixel2 = The color value from <paramref name="output"/>, or the main bitmap if not specified.
+    /// <para/>return = The color value to set <paramref name="output"/>, or directly to the main bitmap if not specified.
+    /// </summary>
+    /// <param name="func"></param>
+    /// <param name="output">The named bitmap to set, or directly modifies the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor Custom(CustomPixelDelegate func, string output = "")
+    {
+        return Custom(Bitmap, func, output);
+    }
+    /// <summary>
+    /// Takes a custom pixel handling delegate to decide the end result of the pixel.
+    /// <para/>
+    /// <paramref name="func"/> has the following signature:
+    /// <code>
+    /// Color func(Color pixel1, Color pixel2)
+    /// </code>
+    /// Where:
+    /// <para/>pixel1 = The color value from the named bitmap <paramref name="name"/>.
+    /// <para/>pixel2 = The color value from <paramref name="output"/>, or the main bitmap if not specified.
+    /// <para/>return = The color value to set <paramref name="output"/>, or directly to the named bitmap if not specified.
+    /// </summary>
+    /// <param name="name">Name of the bitmap to operate on.</param>
+    /// <param name="func"></param>
+    /// <param name="output">The named bitmap to set, or directly modifies the named bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor Custom(string name, CustomPixelDelegate func, string output = "")
+    {
+        return Custom(GetProcessingBitmap(name), func, output);
+    }
+
+    #endregion Pixel operations
+
+    #region Quick helper functions
+
+    private PixelProcessor Grayscale(BitmapType bitmap, string output = "")
+    {
+        return Custom(bitmap, (p1, p2) =>
+        {
+            var b = (int)(p1.GetBrightness() * 255);
+            return Color.FromArgb(p1.A, b, b, b);
+        }, output);
+    }
+    /// <summary>
+    /// Converts pixels to their grayscale value.
+    /// <para/>
+    /// Set alpha to 255 using <see cref="SetValue(string, ColorChannel, int, string)"/> afterwards for a complete grayscale image.
+    /// </summary>
+    /// <param name="output">The named bitmap to set, or directly modifies the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor Grayscale(string output = "")
+    {
+        return Grayscale(Bitmap, output);
+    }
+    /// <summary>
+    /// Converts pixels to their grayscale value.
+    /// <para/>
+    /// Set alpha to 255 using <see cref="SetValue(string, ColorChannel, int, string)"/> afterwards for a complete grayscale image.
+    /// </summary>
+    /// <param name="name">Name of the bitmap to operate on.</param>
+    /// <param name="output">The named bitmap to set, or directly modifies the named bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor Grayscale(string name, string output = "")
+    {
+        return Grayscale(GetProcessingBitmap(name), output);
+    }
+
+    private PixelProcessor ClearAlpha(BitmapType bitmap, int value, string output = "")
+    {
+        return Custom(bitmap, (p1, p2) =>
+        {
+            return p1.A > 0 ? p1 : Color.FromArgb(0, value, value, value);
+        }, output);
+    }
+    /// <summary>
+    /// Clears completely transparent pixels to a given <paramref name="value"/>.
+    /// Modified pixels still maintain their 0 alpha.
+    /// </summary>
+    /// <param name="value">Value to assign to completely transparent pixels.</param>
+    /// <param name="output">The named bitmap to set, or directly modifies the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor ClearAlpha(int value, string output = "")
+    {
+        return ClearAlpha(Bitmap, value, output);
+    }
+    /// <summary>
+    /// Clears completely transparent pixels to transparent black.
+    /// Modified pixels still maintain their 0 alpha.
+    /// </summary>
+    /// <param name="output">The named bitmap to set, or directly modifies the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor ClearAlpha(string output = "")
+    {
+        return ClearAlpha(0, output);
+    }
+    /// <summary>
+    /// Clears completely transparent pixels to a given <paramref name="value"/>.
+    /// Modified pixels still maintain their 0 alpha.
+    /// </summary>
+    /// <param name="name">Name of the bitmap to operate on.</param>
+    /// <param name="value">Value to assign to completely transparent pixels.</param>
+    /// <param name="output">The named bitmap to set, or directly modifies the named bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor ClearAlpha(string name, int value, string output = "")
+    {
+        return ClearAlpha(GetProcessingBitmap(name), value, output);
+    }
+    /// <summary>
+    /// Clears completely transparent pixels to transparent black.
+    /// Modified pixels still maintain their 0 alpha.
+    /// </summary>
+    /// <param name="name">Name of the bitmap to operate on.</param>
+    /// <param name="output">The named bitmap to set, or directly modifies the named bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor ClearAlpha(string name, string output = "")
+    {
+        return ClearAlpha(GetProcessingBitmap(name), 0, output);
+    }
+
+    private PixelProcessor ClearAlpha(BitmapType bitmap, Color color, string output = "")
+    {
+        return Custom(bitmap, (p1, p2) =>
+        {
+            return p1.A > 0 ? p1 : color;
+        }, output);
+    }
+    /// <summary>
+    /// Clears completely transparent pixels to a given <paramref name="color"/>.
+    /// Modified pixels will have their alpha changed to that of <paramref name="color"/>s alpha.
+    /// </summary>
+    /// <param name="color">Color to replace completely transparent pixels.</param>
+    /// <param name="output">The named bitmap to set, or directly modifies the main bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor ClearAlpha(Color color, string output = "")
+    {
+        return ClearAlpha(Bitmap, color, output);
+    }
+    /// <summary>
+    /// Clears completely transparent pixels to a given <paramref name="color"/>.
+    /// Modified pixels will have their alpha changed to that of <paramref name="color"/>s alpha.
+    /// </summary>
+    /// <param name="name">Name of the bitmap to operate on.</param>
+    /// <param name="color">Color to replace completely transparent pixels.</param>
+    /// <param name="output">The named bitmap to set, or directly modifies the named bitmap if not specified.</param>
+    /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
+    public PixelProcessor ClearAlpha(string name, Color color, string output = "")
+    {
+        return ClearAlpha(GetProcessingBitmap(name), color, output);
+    }
+
+    #endregion Quick helper functions
 
     /// <summary>
     /// Saves a named bitmap to a file. Should only be invoked after <see cref="Process"/>!
