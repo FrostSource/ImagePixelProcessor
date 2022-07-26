@@ -28,7 +28,7 @@ public sealed class DirectBitmap : IDisposable
     public int Width => InternalBitmap.Width;
 
     private bool Disposed = false;
-    private readonly Int32[] Bits;
+    private readonly int[] Bits;
     private GCHandle BitsHandle;
 
     /// <summary>
@@ -38,7 +38,7 @@ public sealed class DirectBitmap : IDisposable
     /// <param name="height"></param>
     public DirectBitmap(int width, int height)
     {
-        Bits = new Int32[width * height];
+        Bits = new int[width * height];
         BitsHandle = GCHandle.Alloc(Bits, GCHandleType.Pinned);
         InternalBitmap = new Bitmap(width, height, width * 4, PixelFormat.Format32bppArgb, BitsHandle.AddrOfPinnedObject());
     }
@@ -67,8 +67,8 @@ public sealed class DirectBitmap : IDisposable
     /// <param name="colour"></param>
     public void SetPixel(int x, int y, Color colour)
     {
-        int index = x + (y * Width);
-        int col = colour.ToArgb();
+        var index = x + (y * Width);
+        var col = colour.ToArgb();
 
         Bits[index] = col;
     }
@@ -80,8 +80,8 @@ public sealed class DirectBitmap : IDisposable
     /// <returns></returns>
     public Color GetPixel(int x, int y)
     {
-        int index = x + (y * Width);
-        int col = Bits[index];
+        var index = x + (y * Width);
+        var col = Bits[index];
         var result = Color.FromArgb(col);
 
         return result;
@@ -115,4 +115,10 @@ public sealed class DirectBitmap : IDisposable
         InternalBitmap.Dispose();
         BitsHandle.Free();
     }
+
+    /// <summary>
+    /// Converts a <see cref="Bitmap"/> object to a <see cref="DirectBitmap"/> object.
+    /// </summary>
+    /// <param name="bitmap"></param>
+    public static implicit operator DirectBitmap(Bitmap bitmap) => new DirectBitmap(bitmap);
 }
