@@ -427,12 +427,12 @@ public sealed class PixelProcessor : IDisposable
 
     #region Quick helper functions
 
-    private PixelProcessor Grayscale(BitmapType bitmap, string output = "")
+    private PixelProcessor Grayscale(BitmapType bitmap, bool maintainTransparency = false, string output = "")
     {
         return Custom(bitmap, (p1, p2) =>
         {
             var b = (int)(p1.GetBrightness() * 255);
-            return Color.FromArgb(p1.A, b, b, b);
+            return Color.FromArgb(maintainTransparency ? p1.A : 255, b, b, b);
         }, output);
     }
     /// <summary>
@@ -440,11 +440,12 @@ public sealed class PixelProcessor : IDisposable
     /// <para/>
     /// Set alpha to 255 using <see cref="SetValue(string, ColorChannel, int, string)"/> afterwards for a complete grayscale image.
     /// </summary>
+    /// <param name="maintainTransparency">If transparency should be kept or removed (set to 255).</param>
     /// <param name="output">The named bitmap to set, or directly modifies the main bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
-    public PixelProcessor Grayscale(string output = "")
+    public PixelProcessor Grayscale(bool maintainTransparency = false, string output = "")
     {
-        return Grayscale(Bitmap, output);
+        return Grayscale(Bitmap, maintainTransparency, output);
     }
     /// <summary>
     /// Converts pixels to their grayscale value.
@@ -452,11 +453,12 @@ public sealed class PixelProcessor : IDisposable
     /// Set alpha to 255 using <see cref="SetValue(string, ColorChannel, int, string)"/> afterwards for a complete grayscale image.
     /// </summary>
     /// <param name="name">Name of the bitmap to operate on.</param>
+    /// <param name="maintainTransparency">If transparency should be kept or removed (set to 255).</param>
     /// <param name="output">The named bitmap to set, or directly modifies the named bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
-    public PixelProcessor Grayscale(string name, string output = "")
+    public PixelProcessor Grayscale(string name, bool maintainTransparency = false, string output = "")
     {
-        return Grayscale(GetProcessingBitmap(name), output);
+        return Grayscale(GetProcessingBitmap(name), maintainTransparency, output);
     }
 
     private PixelProcessor ClearAlpha(BitmapType bitmap, int value, string output = "")
