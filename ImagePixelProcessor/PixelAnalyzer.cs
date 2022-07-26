@@ -12,8 +12,8 @@ namespace ImagePixelProcessor;
 [SupportedOSPlatform("windows")]
 public static class PixelAnalyzer
 {
-    private static List<Func<int, int, bool>> Actions = new();
-    private static Dictionary<string, dynamic> Values = new();
+    private static readonly List<Func<int, int, bool>> Actions = new();
+    private static readonly Dictionary<string, dynamic> Values = new();
     private static void Process(BitmapType bitmap, PixelAnalyzerOptions? options = null)
     {
         options ??= PixelAnalyzerOptions.Default;

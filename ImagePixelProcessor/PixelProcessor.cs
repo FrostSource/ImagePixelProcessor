@@ -162,9 +162,9 @@ public sealed class PixelProcessor : IDisposable
     /// Inverts a color channel of a named bitmap and saves the output to another named bitmap.
     /// Subtracts the current value from 255.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="channelFlags"></param>
-    /// <param name="output"></param>
+    /// <param name="name">Named bitmap to operate on.</param>
+    /// <param name="channelFlags"><see cref="ColorChannel"/>(s) to invert.</param>
+    /// <param name="output">Named bitmap to output to; or directly to the named bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
     public PixelProcessor Invert(string name, ColorChannel channelFlags, string output = "")
@@ -175,8 +175,8 @@ public sealed class PixelProcessor : IDisposable
     /// Inverts a color channel of the main bitmap and saves the output to a named bitmap.
     /// Subtracts the current value from 255.
     /// </summary>
-    /// <param name="channelFlags"></param>
-    /// <param name="output"></param>
+    /// <param name="channelFlags"><see cref="ColorChannel"/>(s) to invert.</param>
+    /// <param name="output">Named bitmap to output to; or directly to the main bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
     public PixelProcessor Invert(ColorChannel channelFlags, string output = "")
@@ -208,7 +208,7 @@ public sealed class PixelProcessor : IDisposable
     /// </summary>
     /// <param name="name">Named bitmap to operate on.</param>
     /// <param name="color"><see cref="Color"/> value to set as.</param>
-    /// <param name="output">Named bitmap to output to; or directly to the main bitmap if not specified.</param>
+    /// <param name="output">Named bitmap to output to; or directly to the named bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     public PixelProcessor Set(string name, Color color, string output = "")
     {
@@ -233,10 +233,10 @@ public sealed class PixelProcessor : IDisposable
     /// <summary>
     /// Sets the value of a named bitmap's color channel and saves the output to another named bitmap.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="channelFlags"></param>
+    /// <param name="name">Named bitmap to operate on.</param>
+    /// <param name="channelFlags"><see cref="ColorChannel"/>(s) to set.</param>
     /// <param name="value">[0-255]</param>
-    /// <param name="output"></param>
+    /// <param name="output">Named bitmap to output to; or directly to the named bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
     public PixelProcessor SetValue(string name, ColorChannel channelFlags, int value, string output = "")
@@ -246,9 +246,9 @@ public sealed class PixelProcessor : IDisposable
     /// <summary>
     /// Sets the value of the main bitmap's color channel and saves the output to a named bitmap.
     /// </summary>
-    /// <param name="channelFlags"></param>
+    /// <param name="channelFlags"><see cref="ColorChannel"/>(s) to set.</param>
     /// <param name="value">[0-255]</param>
-    /// <param name="output"></param>
+    /// <param name="output">Named bitmap to output to; or directly to the main bitmap if not specified.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
     public PixelProcessor SetValue(ColorChannel channelFlags, int value, string output = "")
@@ -259,8 +259,8 @@ public sealed class PixelProcessor : IDisposable
     /// <summary>
     /// Merges two named bitmaps together by adding their color values and saves the output in a new named bitmap.
     /// </summary>
-    /// <param name="name1"></param>
-    /// <param name="name2"></param>
+    /// <param name="name1">Named bitmap to merge.</param>
+    /// <param name="name2">Named bitmap to merge.</param>
     /// <param name="output">If output is blank then <paramref name="name1"/> will be copied directly into <paramref name="name2"/></param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     public PixelProcessor Merge(string name1, string name2, string output = "")
