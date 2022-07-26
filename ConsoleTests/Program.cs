@@ -24,7 +24,7 @@ internal class Program
             .Copy(ColorChannel.RGB, "no_alpha")
             .SetValue("no_alpha", ColorChannel.A, 255)
             // Grayscale
-            .Grayscale("grayscale")
+            .Grayscale(output: "grayscale")
             // Clear alpha to value/color
             .ClearAlpha(255, "alpha_white")
             .SetValue("alpha_white", ColorChannel.A, 255)
@@ -36,6 +36,10 @@ internal class Program
             .Set(common, "common")
             .ProcessSave(Path.Join(testPath, Path.GetFileNameWithoutExtension(testImage) + "_{0}"), true, ImageFormat.Png)
             ;
+        Console.WriteLine(PixelAnalyzer.IsGrayscale(pp.GetProcessingBitmap("grayscale")));
+        Console.WriteLine(PixelAnalyzer.IsGrayscale(pp.GetProcessingBitmap("grayscale"), true));
+        Console.WriteLine(PixelAnalyzer.IsGrayscale(pp.GetProcessingBitmap("grayscale"), true, PixelAnalyzerOptions.HalfRes));
+        Console.WriteLine(PixelAnalyzer.IsGrayscale(pp.GetProcessingBitmap("grayscale"), true, PixelAnalyzerOptions.QuarterRes));
 
         Console.Write("Press any key to delete created images... ");
         Console.ReadKey();
