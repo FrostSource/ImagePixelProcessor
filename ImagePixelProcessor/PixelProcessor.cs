@@ -41,6 +41,10 @@ public sealed class PixelProcessor : IDisposable
     /// Height of the image being processed.
     /// </summary>
     public int Height => Bitmap.Height;
+    /// <summary>
+    /// Gets an array of all existing named bitmaps.
+    /// </summary>
+    public string[] Names => ProcessingBitmaps.Keys.ToArray();
 
     /// <summary>
     /// Creates a new <see cref="PixelProcessor"/> object from an existing <see cref="System.Drawing.Bitmap"/>.
