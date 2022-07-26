@@ -34,6 +34,9 @@ internal class Program
             // Test average
             .Set(avg, "average")
             .Set(common, "common")
+            // ColorChannel flags
+            .Extract(ColorChannel.R | ColorChannel.G | ColorChannel.A, "rga")
+            .Extract(ColorChannel.B | ColorChannel.A, "ba")
             .ProcessSave(Path.Join(testPath, Path.GetFileNameWithoutExtension(testImage) + "_{0}"), true, ImageFormat.Png)
             ;
         Console.WriteLine(PixelAnalyzer.IsGrayscale(pp.GetProcessingBitmap("grayscale")));

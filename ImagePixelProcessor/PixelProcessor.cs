@@ -93,23 +93,18 @@ public sealed class PixelProcessor : IDisposable
 
     #region Pixel operations
 
-    private PixelProcessor Extract(BitmapType bitmap, ColorChannel channel, string output = "")
+    private PixelProcessor Extract(BitmapType bitmap, ColorChannel channelFlags, string output = "")
     {
         BitmapType newBitmap = string.IsNullOrEmpty(output) ? bitmap : GetProcessingBitmap(output);
         Actions.Add((x, y) =>
         {
             Color pixel = bitmap.GetPixel(x, y);
             Color pixel2 = newBitmap.GetPixel(x, y);
-            Color color = channel switch
-            {
-                ColorChannel.A => Color.FromArgb(pixel.A, pixel2.R, pixel2.G, pixel2.B),
-                ColorChannel.R => Color.FromArgb(pixel2.A, pixel.R, pixel2.G, pixel2.B),
-                ColorChannel.G => Color.FromArgb(pixel2.A, pixel2.R, pixel.G, pixel2.B),
-                ColorChannel.B => Color.FromArgb(pixel2.A, pixel2.R, pixel2.G, pixel.B),
-                ColorChannel.RGB => Color.FromArgb(pixel2.A, pixel.R, pixel.G, pixel.B),
-                _ => throw new NotImplementedException(),
-            };
-            newBitmap.SetPixel(x, y, color);
+            var a = (channelFlags & ColorChannel.A) != 0 ? pixel.A : pixel2.A;
+            var r = (channelFlags & ColorChannel.R) != 0 ? pixel.R : pixel2.R;
+            var g = (channelFlags & ColorChannel.G) != 0 ? pixel.G : pixel2.G;
+            var b = (channelFlags & ColorChannel.B) != 0 ? pixel.B : pixel2.B;
+            newBitmap.SetPixel(x, y, Color.FromArgb(a, r, g, b));
         });
         return this;
     }
@@ -117,54 +112,49 @@ public sealed class PixelProcessor : IDisposable
     /// Extracts a color value from a named bitmap into another named bitmap.
     /// </summary>
     /// <param name="name">Named bitmap to extract from.</param>
-    /// <param name="channel">Channel to extract.</param>
+    /// <param name="channelFlags">Channel(s) to extract.</param>
     /// <param name="output">Named bitmap to extract to.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public PixelProcessor Extract(string name, ColorChannel channel, string output)
+    public PixelProcessor Extract(string name, ColorChannel channelFlags, string output)
     {
-        return Extract(GetProcessingBitmap(name), channel, output);
+        return Extract(GetProcessingBitmap(name), channelFlags, output);
     }
 
     /// <summary>
     /// Extracts a color value from the main bitmap into a named bitmap.
     /// </summary>
-    /// <param name="channel"></param>
-    /// <param name="output"></param>
+    /// <param name="channelFlags">Channel(s) to extract.</param>
+    /// <param name="output">Named bitmap to extract to.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public PixelProcessor Extract(ColorChannel channel, string output)
+    public PixelProcessor Extract(ColorChannel channelFlags, string output)
     {
-        return Extract(Bitmap, channel, output);
+        return Extract(Bitmap, channelFlags, output);
     }
 
     /// <inheritdoc cref="Extract(string, ColorChannel, string)"/>
-    public PixelProcessor Copy(string name, ColorChannel channel, string output)
+    public PixelProcessor Copy(string name, ColorChannel channelFlags, string output)
     {
-        return Extract(GetProcessingBitmap(name), channel, output);
+        return Extract(GetProcessingBitmap(name), channelFlags, output);
     }
     ///<inheritdoc cref="Extract(ColorChannel, string)"/>
-    public PixelProcessor Copy(ColorChannel channel, string output)
+    public PixelProcessor Copy(ColorChannel channelFlags, string output)
     {
-        return Extract(Bitmap, channel, output);
+        return Extract(Bitmap, channelFlags, output);
     }
 
-    private PixelProcessor Invert(BitmapType bitmap, ColorChannel channel, string output = "")
+    private PixelProcessor Invert(BitmapType bitmap, ColorChannel channelFlags, string output = "")
     {
         BitmapType newBitmap = string.IsNullOrEmpty(output) ? bitmap : GetProcessingBitmap(output);
         Actions.Add((x, y) =>
         {
             Color pixel = bitmap.GetPixel(x, y);
-            Color color = channel switch
-            {
-                ColorChannel.A => Color.FromArgb(255 - pixel.A, pixel.R, pixel.G, pixel.B),
-                ColorChannel.R => Color.FromArgb(pixel.A, 255 - pixel.R, pixel.G, pixel.B),
-                ColorChannel.G => Color.FromArgb(pixel.A, pixel.R, 255 - pixel.G, pixel.B),
-                ColorChannel.B => Color.FromArgb(pixel.A, pixel.R, pixel.G, 255 - pixel.B),
-                ColorChannel.RGB => Color.FromArgb(pixel.A, 255 - pixel.R, 255 - pixel.G, 255 - pixel.B),
-                _ => throw new NotImplementedException(),
-            };
-            newBitmap.SetPixel(x, y, color);
+            var a = (channelFlags & ColorChannel.A) != 0 ? 255 - pixel.A : pixel.A;
+            var r = (channelFlags & ColorChannel.R) != 0 ? 255 - pixel.R : pixel.R;
+            var g = (channelFlags & ColorChannel.G) != 0 ? 255 - pixel.G : pixel.G;
+            var b = (channelFlags & ColorChannel.B) != 0 ? 255 - pixel.B : pixel.B;
+            newBitmap.SetPixel(x, y, Color.FromArgb(a, r, g, b));
         });
         return this;
     }
@@ -173,25 +163,25 @@ public sealed class PixelProcessor : IDisposable
     /// Subtracts the current value from 255.
     /// </summary>
     /// <param name="name"></param>
-    /// <param name="channel"></param>
+    /// <param name="channelFlags"></param>
     /// <param name="output"></param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public PixelProcessor Invert(string name, ColorChannel channel, string output = "")
+    public PixelProcessor Invert(string name, ColorChannel channelFlags, string output = "")
     {
-        return Invert(GetProcessingBitmap(name), channel, output);
+        return Invert(GetProcessingBitmap(name), channelFlags, output);
     }
     /// <summary>
     /// Inverts a color channel of the main bitmap and saves the output to a named bitmap.
     /// Subtracts the current value from 255.
     /// </summary>
-    /// <param name="channel"></param>
+    /// <param name="channelFlags"></param>
     /// <param name="output"></param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public PixelProcessor Invert(ColorChannel channel, string output = "")
+    public PixelProcessor Invert(ColorChannel channelFlags, string output = "")
     {
-        return Invert(Bitmap, channel, output);
+        return Invert(Bitmap, channelFlags, output);
     }
 
     private PixelProcessor Set(BitmapType bitmap, Color color, string output = "")
@@ -225,23 +215,18 @@ public sealed class PixelProcessor : IDisposable
         return Set(GetProcessingBitmap(name), color, output);
     }
 
-    private PixelProcessor SetValue(BitmapType bitmap, ColorChannel channel, int value, string output = "")
+    private PixelProcessor SetValue(BitmapType bitmap, ColorChannel channelFlags, int value, string output = "")
     {
         BitmapType newBitmap = string.IsNullOrEmpty(output) ? bitmap : GetProcessingBitmap(output);
         value = Math.Clamp(value, 0, 255);
         Actions.Add((x, y) =>
         {
             Color pixel = bitmap.GetPixel(x, y);
-            Color color = channel switch
-            {
-                ColorChannel.A => Color.FromArgb(value, pixel.R, pixel.G, pixel.B),
-                ColorChannel.R => Color.FromArgb(pixel.A, value, pixel.G, pixel.B),
-                ColorChannel.G => Color.FromArgb(pixel.A, pixel.R, value, pixel.B),
-                ColorChannel.B => Color.FromArgb(pixel.A, pixel.R, pixel.G, value),
-                ColorChannel.RGB => Color.FromArgb(pixel.A, value, value, value),
-                _ => throw new NotImplementedException(),
-            };
-            newBitmap.SetPixel(x, y, color);
+            var a = (channelFlags & ColorChannel.A) != 0 ? value : pixel.A;
+            var r = (channelFlags & ColorChannel.R) != 0 ? value : pixel.R;
+            var g = (channelFlags & ColorChannel.G) != 0 ? value : pixel.G;
+            var b = (channelFlags & ColorChannel.B) != 0 ? value : pixel.B;
+            newBitmap.SetPixel(x, y, Color.FromArgb(a, r, g, b));
         });
         return this;
     }
@@ -249,26 +234,26 @@ public sealed class PixelProcessor : IDisposable
     /// Sets the value of a named bitmap's color channel and saves the output to another named bitmap.
     /// </summary>
     /// <param name="name"></param>
-    /// <param name="channel"></param>
+    /// <param name="channelFlags"></param>
     /// <param name="value">[0-255]</param>
     /// <param name="output"></param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public PixelProcessor SetValue(string name, ColorChannel channel, int value, string output = "")
+    public PixelProcessor SetValue(string name, ColorChannel channelFlags, int value, string output = "")
     {
-        return SetValue(GetProcessingBitmap(name), channel, value, output);
+        return SetValue(GetProcessingBitmap(name), channelFlags, value, output);
     }
     /// <summary>
     /// Sets the value of the main bitmap's color channel and saves the output to a named bitmap.
     /// </summary>
-    /// <param name="channel"></param>
+    /// <param name="channelFlags"></param>
     /// <param name="value">[0-255]</param>
     /// <param name="output"></param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="NotImplementedException"></exception>
-    public PixelProcessor SetValue(ColorChannel channel, int value, string output = "")
+    public PixelProcessor SetValue(ColorChannel channelFlags, int value, string output = "")
     {
-        return SetValue(Bitmap, channel, value, output);
+        return SetValue(Bitmap, channelFlags, value, output);
     }
 
     /// <summary>
@@ -302,36 +287,20 @@ public sealed class PixelProcessor : IDisposable
         Actions.Add((x, y) =>
         {
             Color pixel = bitmap1.GetPixel(x, y);
-            //Color pixel2 = bitmap2.GetPixel(x, y);
             int value = from switch
             {
                 ColorChannel.A => pixel.A,
                 ColorChannel.R => pixel.R,
                 ColorChannel.G => pixel.G,
                 ColorChannel.B => pixel.B,
-                //ColorChannel.RGB => 0,
-                ColorChannel.RGB => throw new ArgumentException("RGB is not valid in the 'from' channel."),
-                _ => throw new NotImplementedException(),
+                _ => throw new ArgumentException("Parameter 'from' in PixelProcessor.Shift must be a single ColorChannel."),
             };
             Color pixel2 = bitmap2.GetPixel(x, y);
-            switch (to)
-            {
-                case ColorChannel.A:
-                    bitmap2.SetPixel(x, y, Color.FromArgb(value, pixel2.R, pixel2.G, pixel2.B));
-                    break;
-                case ColorChannel.R:
-                    bitmap2.SetPixel(x, y, Color.FromArgb(pixel2.A, value, pixel2.G, pixel2.B));
-                    break;
-                case ColorChannel.G:
-                    bitmap2.SetPixel(x, y, Color.FromArgb(pixel2.A, pixel2.R, value, pixel2.B));
-                    break;
-                case ColorChannel.B:
-                    bitmap2.SetPixel(x, y, Color.FromArgb(pixel2.A, pixel2.R, pixel2.G, value));
-                    break;
-                case ColorChannel.RGB:
-                    bitmap2.SetPixel(x, y, Color.FromArgb(pixel2.A, value, value, value));
-                    break;
-            }
+            var a = (to & ColorChannel.A) != 0 ? value : pixel2.A;
+            var r = (to & ColorChannel.R) != 0 ? value : pixel2.R;
+            var g = (to & ColorChannel.G) != 0 ? value : pixel2.G;
+            var b = (to & ColorChannel.B) != 0 ? value : pixel2.B;
+            bitmap2.SetPixel(x, y, Color.FromArgb(a, r, g, b));
         });
         return this;
     }
@@ -339,9 +308,9 @@ public sealed class PixelProcessor : IDisposable
     /// Copies color channel value of '<paramref name="from"/>' in <paramref name="name1"/> into color channel '<paramref name="to"/>' of <paramref name="name2"/>.
     /// </summary>
     /// <param name="name1">Name of the bitmap to shift from.</param>
-    /// <param name="from">Must be a single channel, may not be <see cref="ColorChannel.RGB"/>.</param>
+    /// <param name="from"><see cref="ColorChannel"/> to shift the value from. Must be a single channel.</param>
     /// <param name="name2">Name of the bitmap to shift into.</param>
-    /// <param name="to">The channel to copy into. May be <see cref="ColorChannel.RGB"/></param>
+    /// <param name="to">The <see cref="ColorChannel"/>(s) to shift the value into.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="NotImplementedException"></exception>
@@ -352,9 +321,9 @@ public sealed class PixelProcessor : IDisposable
     /// <summary>
     /// Copies the color channel value of '<paramref name="from"/>' in the main bitmap into color channel '<paramref name="to"/>' of <paramref name="name"/>.
     /// </summary>
-    /// <param name="from">Must be a single channel, may not be <see cref="ColorChannel.RGB"/>.</param>
+    /// <param name="from"><see cref="ColorChannel"/> to shift the value from. Must be a single channel.</param>
     /// <param name="name">Name of the bitmap to shift into.</param>
-    /// <param name="to">The channel to copy into. May be <see cref="ColorChannel.RGB"/></param>
+    /// <param name="to">The <see cref="ColorChannel"/>(s) to shift the value into.</param>
     /// <returns>This <see cref="PixelProcessor"/> to continue the chain.</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="NotImplementedException"></exception>
